@@ -111,7 +111,9 @@ class MachinistContextTest extends \PHPUnit_Framework_TestCase
             ->thenReturn($blueprint);
         $blueprintName = 'Blueprint Name';
 
-        $table = new TableNode("| value | {$value} |");
+        $table = new TableNode(array(
+            array('value', $value)
+        ));
         $this->context->theFollowingMachineExists($blueprintName, $table);
 
         Phake::verify($this->machinist)->getBlueprint($blueprintName);

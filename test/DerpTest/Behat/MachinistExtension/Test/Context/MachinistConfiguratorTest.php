@@ -67,6 +67,7 @@ class MachinistConfiguratorTest extends \PHPUnit_Framework_TestCase
                 'mysql-store' => array(
                     'type' => 'mysql',
                     'dsn'  => 'mysql:localhost',
+                    'user' => 'root',
                     'options' => array(
                         '1002' => 'SET NAMES utf8'
                     )

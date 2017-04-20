@@ -1,64 +1,37 @@
 <?php
-/**
- * Copyright (c) 2013 Adam L. Englander
- *
- * Permission is hereby granted, free of charge, to any person obtaining a
- * copy of this software and associated documentation files (the "Software"),
- * to deal in the Software without restriction, including without limitation
- * the rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons to whom the Software
- * is furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
- * PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
- * HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
- * CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE
- * OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- */
 
-namespace DerpTest\Behat\MachinistExtension;
+namespace DerpTest\Behat\MachinistExtension\ServiceContainer;
 
+use Behat\Behat\Context\ServiceContainer\ContextExtension;
+use Behat\Testwork\ServiceContainer\Extension;
+use Behat\Testwork\ServiceContainer\ExtensionManager;
 use Symfony\Component\Config\Definition\Builder\ArrayNodeDefinition;
+use Symfony\Component\Config\Definition\Exception\Exception;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Loader\XmlFileLoader;
 
-/**
- * @author Adam L. Englander <adam.l.englander@coupla.co>
- *
- * Machinist extension for Behat
- */
-class Extension implements \Behat\Behat\Extension\ExtensionInterface
+class MachinistExtension implements Extension
 {
-
-    /**
-     * Loads a specific configuration.
-     *
-     * @param array $config    Extension configuration hash (from behat.yml)
-     * @param ContainerBuilder $container ContainerBuilder instance
-     */
-    public function load(array $config, ContainerBuilder $container)
+    public function getConfigKey()
     {
-        $this->validateConfig($config);
-        $this->processDefaults($config);
-        $loader = new XmlFileLoader($container, new FileLocator(__DIR__.'/services'));
-        $loader->load('core.xml');
-        $container->setParameter('derptest.phpmachinist.behat.parameters', $config);
+        return 'machinist';
     }
 
-    /**
-     * Setups configuration for current extension.
-     *
-     * @param ArrayNodeDefinition $builder
-     */
-    public function getConfig(ArrayNodeDefinition $builder)
+    public function process(ContainerBuilder $container)
+    {
+    }
+
+    public function initialize(ExtensionManager $extensionManager)
+    {
+    }
+
+    public function configure(ArrayNodeDefinition $builder)
     {
         $builder
             ->children()
+                ->arrayNode('doctrine_orm')
+                ->end()
                 ->scalarNode('truncate_on_wipe')
                     ->defaultFalse()
                 ->end()
@@ -71,7 +44,8 @@ class Extension implements \Behat\Behat\Extension\ExtensionInterface
                                 ->isRequired()
                                 ->values(array(
                                     'sqlite',
-                                    'mysql'
+                                    'mysql',
+                                    'postgresql'
                                 ))
                             ->end()
                             ->scalarNode('dsn')
@@ -120,14 +94,15 @@ class Extension implements \Behat\Behat\Extension\ExtensionInterface
         ->end();
     }
 
-    /**
-     * Returns compiler passes used by this extension.
-     *
-     * @return array
-     */
-    public function getCompilerPasses()
+    public function load(ContainerBuilder $container, array $config)
     {
-        return array();
+        $this->validateConfig($config);
+        $this->processDefaults($config);
+        $loader = new XmlFileLoader($container, new FileLocator(__DIR__));
+        $loader->load('core.xml');
+        $container->setParameter('derptest.phpmachinist.behat.parameters', $config);
+        $tagged = $container->findDefinition('derptest.phpmachinist.behat.context.initializer')
+            ->addTag(ContextExtension::INITIALIZER_TAG);
     }
 
     protected function validateConfig(array $config)
@@ -137,6 +112,11 @@ class Extension implements \Behat\Behat\Extension\ExtensionInterface
 
     protected function processDefaults(array &$configs)
     {
+        $hasDoctrine = false;
+        if (array_key_exists('doctrine_orm', $configs)) {
+            $this->processDoctrineDefaults($configs['doctrine_orm']);
+            $hasDoctrine = true;
+        }
 
         if (!empty($configs['store'])) {
             $this->processStoreDefaults($configs['store']);
@@ -147,6 +127,12 @@ class Extension implements \Behat\Behat\Extension\ExtensionInterface
             // Process blueprints defaults separately from relationships to ensure
             // all blueprints exists before relating them
             $this->processRelationshipDefaults($configs['blueprint']);
+        }
+    }
+
+    protected function processDoctrineDefaults(array &$doctrineConfigs) {
+        if (!empty($doctrineConfigs)) {
+            throw new Exception('not yet implemented');
         }
     }
 

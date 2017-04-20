@@ -80,7 +80,7 @@ class MachinistAwareInitializerTest extends \PHPUnit_Framework_TestCase
             $this->configurator,
             array()
         );
-        $context = Phake::mock('\Behat\Behat\Context\ContextInterface');
+        $context = Phake::mock('\Behat\Behat\Context\Context');
         $actual = $initializer->supports($context);
         $this->assertFalse($actual);
     }
@@ -94,7 +94,7 @@ class MachinistAwareInitializerTest extends \PHPUnit_Framework_TestCase
             $this->configurator,
             $expectedArray
         );
-        $initializer->initialize($context);
+        $initializer->initializeContext($context);
 
         Phake::verify($context)->setMachinist($this->machinist);
         Phake::verify($context)->setMachinistParameters($expectedArray);
@@ -109,8 +109,8 @@ class MachinistAwareInitializerTest extends \PHPUnit_Framework_TestCase
             $this->configurator,
             $expectedArray
         );
-        $initializer->initialize($context);
-        $initializer->initialize($context);
+        $initializer->initializeContext($context);
+        $initializer->initializeContext($context);
 
         Phake::verify($this->configurator)->configure($expectedArray);
     }

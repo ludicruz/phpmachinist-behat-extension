@@ -22,18 +22,26 @@
 
 namespace DerpTest\Behat\MachinistExtension\Context;
 
-use Behat\Behat\Context\ExtendedContextInterface;
+use Behat\Behat\Context\Context;
+use Behat\Behat\Hook\Scope\BeforeScenario;
+use Behat\Behat\Hook\Scope\BeforeScenarioScope;
+use Behat\Symfony2Extension\Context\KernelDictionary;
+use Behat\Symfony2Extension\Context\KernelAwareContext;
 use DerpTest\Machinist\Machinist;
+use DerpTest\Machinist\Store\Doctrine as DoctrineStore;
+use Doctrine\ORM\EntityManager;
 
 /**
  * @author Adam L. Englander <adam.l.englander@coupla.co>
  *
  * Machinist context for implementing Machinist machines in Behat
  */
-class RawMachinistContext implements ExtendedContextInterface, MachinistAwareInterface
+class RawMachinistContext implements Context, MachinistAwareInterface, KernelAwareContext
 {
+    use KernelDictionary;
+
     /**
-     * @var ExtendedContextInterface
+     * @var Context
      */
     protected $parentContext;
 
@@ -48,26 +56,77 @@ class RawMachinistContext implements ExtendedContextInterface, MachinistAwareInt
     protected $truncateOnWipe = false;
 
     /**
-     * Returns main context.
-     *
-     * @return \Behat\Behat\Context\ExtendedContextInterface
+     * @var bool
      */
-    public function getMainContext()
+    protected $doctrineOrm = false;
+
+    /**
+     * @var EntityManager
+     */
+    protected $doctrineEntityManager;
+
+    /**
+     * @BeforeScenario
+     * @param BeforeScenarioScope $scope
+     */
+    public function setupDoctrine(BeforeScenarioScope $scope)
     {
-        if ($this->parentContext) {
-            $mainContext = $this->parentContext->getMainContext();
-        } else {
-            $mainContext = $this;
+        if (!$this->doctrineEntityManager) {
+            $this->doctrineEntityManager = $this->getKernel()->getContainer()->get('doctrine.orm.entity_manager');
+            $store = new DoctrineStore(
+                $this->doctrineEntityManager,
+                array('\\AppBundle\\Entity')
+            );
+            $machinist = $this->getMachinist();
+            $machinist->addStore($store, 'default');
+
+            $metaDataFactory = $this->doctrineEntityManager->getMetadataFactory();
+            $mappings = [];
+            foreach ($metaDataFactory->getAllMetadata() as $metaData) {
+                if (!$metaData->isMappedSuperclass) {
+                    $mName = $metaData->getName();
+                    $mappings[$mName] = [];
+                    foreach ($metaData->getAssociationMappings() as $associationMapping) {
+                        if ($associationMapping['isOwningSide'] &&
+                            !DoctrineStore::isManyToMany($associationMapping['type'])
+                        ) {
+                            $mappings[$mName][$associationMapping['targetEntity']] = $associationMapping;
+                        }
+                    }
+                    Machinist::blueprint($mName);
+                }
+            }
+            foreach ($mappings as $mName => $mapping) {
+                foreach($mapping as $relationship => $associationMapping) {
+                    $rel = Machinist::relationship($relationship);
+                    $joinColumn = $associationMapping['fieldName'];
+                    if (!empty($associationMapping['joinColumns'][0]['name'])) {
+                        $joinColumn = $associationMapping['joinColumns'][0]['name'];
+                    }
+                    $rel->local($associationMapping['fieldName']);
+                    $rel->type($associationMapping['type']);
+                    Machinist::blueprint($mName)->addDefault(
+                        $relationship,
+                        $rel
+                    );
+                }
+            }
         }
-        return $mainContext;
+//
+//        /** @var \Behat\Behat\Context\Environment\InitializedContextEnvironment $env */
+//        $env = $scope->getEnvironment();
+//        $machinistContextClass = '\DerpTest\Behat\MachinistExtension\Context\MachinistContext';
+//        if (!$env->hasContextClass($machinistContextClass)) {
+//            $env->registerContext($this->machinistContext);
+//        }
     }
 
     /**
      * Sets parent context of current context.
      *
-     * @param \Behat\Behat\Context\ExtendedContextInterface $parentContext
-    \     */
-    public function setParentContext(ExtendedContextInterface $parentContext)
+     * @param Context $parentContext
+     */
+    public function setParentContext(Context $parentContext)
     {
         $this->parentContext = $parentContext;
     }
@@ -77,7 +136,7 @@ class RawMachinistContext implements ExtendedContextInterface, MachinistAwareInt
      *
      * @param string $alias
      *
-     * @return ExtendedContextInterface
+     * @return Context
      */
     public function getSubcontext($alias)
     {
@@ -99,7 +158,7 @@ class RawMachinistContext implements ExtendedContextInterface, MachinistAwareInt
      *
      * @param string $className
      *
-     * @return ContextInterface
+     * @return Context
      */
     public function getSubcontextByClassName($className)
     {
@@ -117,7 +176,10 @@ class RawMachinistContext implements ExtendedContextInterface, MachinistAwareInt
     protected function processParameters(array $parameters)
     {
         if (array_key_exists('truncate_on_wipe', $parameters)) {
-            $this->truncateOnWipe = (bool) $parameters['truncate_on_wipe'];
+            $this->truncateOnWipe = (bool)$parameters['truncate_on_wipe'];
+        }
+        if (array_key_exists('doctrine_orm', $parameters)) {
+            $this->doctrineOrm = true;
         }
     }
 
@@ -141,6 +203,5 @@ class RawMachinistContext implements ExtendedContextInterface, MachinistAwareInt
     public function setMachinistParameters(array $parameters)
     {
         $this->processParameters($parameters);
-
     }
 }

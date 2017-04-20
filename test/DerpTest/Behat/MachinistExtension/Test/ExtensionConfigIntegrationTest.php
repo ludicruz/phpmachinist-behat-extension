@@ -31,7 +31,7 @@
 namespace DerpTest\Behat\MachinistExtension\Test;
 
 
-use DerpTest\Behat\MachinistExtension\Extension;
+use DerpTest\Behat\MachinistExtension\ServiceContainer\MachinistExtension;
 use Symfony\Component\Config\Definition\Builder\ArrayNodeDefinition;
 use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
 use Symfony\Component\Config\Definition\NodeInterface;
@@ -44,15 +44,15 @@ class ExtensionConfigIntegrationTest extends \PHPUnit_Framework_TestCase
     private $node;
 
     /**
-     * @var Extension
+     * @var MachinistExtension
      */
     private $extension;
 
     protected function setUp()
     {
-        $this->extension = new Extension();
+        $this->extension = new MachinistExtension();
         $definition = new ArrayNodeDefinition('test');
-        $this->extension->getConfig($definition);
+        $this->extension->configure($definition);
         $this->node = $definition->getNode();
     }
 

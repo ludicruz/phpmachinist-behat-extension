@@ -1,14 +1,19 @@
 <?php
 
-use Behat\Behat\Context\BehatContext;
+require_once(__DIR__ . '/bootstrap.php');
+
+use Behat\Behat\Context\Context;
+use Behat\Behat\Hook\Scope\BeforeScenario;
+use Behat\Behat\Hook\Scope\BeforeScenarioScope;
 use DerpTest\Behat\MachinistExtension\Context\MachinistAwareInterface;
 use DerpTest\Behat\MachinistExtension\Context\MachinistContext;
 use DerpTest\Machinist\Machinist;
 
 /**
  * Features context.
+ * this could extend MachinistContext and be done or you can do something similar to below in $this->gatherContexts
  */
-class FeatureContext extends BehatContext implements MachinistAwareInterface
+class FeatureContext implements MachinistAwareInterface, Context
 {
     /**
      * @var \DerpTest\Machinist\Machinist
@@ -16,19 +21,34 @@ class FeatureContext extends BehatContext implements MachinistAwareInterface
     private $machinist;
 
     /**
+     * @var MachinistContext
+     */
+    private $machinistContext;
+
+    /**
      * @var array
      */
     private $machinistParameters;
 
     /**
-     * Initializes context.
-     * Every scenario gets it's own context object.
-     *
-     * @param array $parameters context parameters (set them up through behat.yml)
+     * FeatureContext constructor.
      */
-    public function __construct(array $parameters)
+    public function __construct()
     {
-        $this->useContext('machinst', new MachinistContext());
+        $this->machinistContext = new MachinistContext();
+    }
+
+    /**
+     * @BeforeScenario
+     * @param BeforeScenarioScope $scope
+     */
+    public function gatherContexts(BeforeScenarioScope $scope) {
+        /** @var \Behat\Behat\Context\Environment\InitializedContextEnvironment $env */
+        $env = $scope->getEnvironment();
+        $machinistContextClass = '\DerpTest\Behat\MachinistExtension\Context\MachinistContext';
+        if (!$env->hasContextClass($machinistContextClass)) {
+            $env->registerContext($this->machinistContext);
+        }
     }
 
     /**
@@ -40,6 +60,7 @@ class FeatureContext extends BehatContext implements MachinistAwareInterface
     public function setMachinist(Machinist $machinist)
     {
         $this->machinist = $machinist;
+        $this->machinistContext->setMachinist($machinist);
     }
 
     /**
@@ -51,6 +72,7 @@ class FeatureContext extends BehatContext implements MachinistAwareInterface
     public function setMachinistParameters(array $parameters)
     {
         $this->machinistParameters = $parameters;
+        $this->machinistContext->setMachinistParameters($parameters);
     }
 
 
@@ -69,5 +91,4 @@ class FeatureContext extends BehatContext implements MachinistAwareInterface
     {
         throw new PendingException();
     }
-
 }

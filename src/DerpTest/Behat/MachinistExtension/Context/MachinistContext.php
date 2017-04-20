@@ -23,6 +23,7 @@
 namespace DerpTest\Behat\MachinistExtension\Context;
 
 use Behat\Gherkin\Node\TableNode;
+use DerpTest\Machinist\Relationship;
 
 /**
  * @author Adam L. Englander <adam.l.englander@coupla.co>
@@ -145,7 +146,6 @@ class MachinistContext extends RawMachinistContext implements MachinistAwareInte
 
     protected function addMachine($blueprint, array $data)
     {
-
         $bp = $this->getMachinist()->getBlueprint($blueprint);
         if (!$bp) {
             throw new \InvalidArgumentException(
@@ -156,6 +156,7 @@ class MachinistContext extends RawMachinistContext implements MachinistAwareInte
         foreach ($data as $key => $val) {
             if ($bp->hasRelationship($key)) {
                 $relOverrides = $this->findRelationalOverrides($val);
+                /** @var Relationship $relationship */
                 $relationship = $bp->getRelationship($key);
                 $overrides[$key] = $relationship->getBlueprint()->findOrCreate($relOverrides);
             } else {
@@ -173,14 +174,14 @@ class MachinistContext extends RawMachinistContext implements MachinistAwareInte
         foreach ($values as $value) {
             if (preg_match_all('/([^\s:]+)\s*:\s*(.+)/', $value, $matches, PREG_SET_ORDER)) {
                 foreach ($matches as $match) {
-                    $relOverrides[$match[1]] = $match[2];
+                    $relOverrides[$match[1]] = $this->mapSpecials($match[2]);
                 }
             }
         }
         return $relOverrides;
     }
 
-    private function mapSpecials($val)
+    protected function mapSpecials($val)
     {
         $mapped = $val;
         if (array_key_exists($val, self::$specialsMap)) {

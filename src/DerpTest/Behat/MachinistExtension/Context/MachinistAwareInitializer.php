@@ -20,12 +20,10 @@
  * OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-namespace DerpTest\Behat\MachinistExtension\Context\Initializer;
+namespace DerpTest\Behat\MachinistExtension\Context;
 
-use Behat\Behat\Context\ContextInterface;
-use Behat\Behat\Context\Initializer\InitializerInterface;
-use DerpTest\Behat\MachinistExtension\Context\MachinistAwareInterface;
-use DerpTest\Behat\MachinistExtension\Context\MachinistConfigurator;
+use Behat\Behat\Context\Context;
+use Behat\Behat\Context\Initializer\ContextInitializer;
 use DerpTest\Machinist\Machinist;
 
 /**
@@ -33,7 +31,7 @@ use DerpTest\Machinist\Machinist;
  *
  * Initializer to inject Machinist instances into Machinist aware objects
  */
-class MachinistAwareInitializer implements InitializerInterface
+class MachinistAwareInitializer implements ContextInitializer
 {
     /**
      * @var \DerpTest\Machinist\Machinist
@@ -63,24 +61,16 @@ class MachinistAwareInitializer implements InitializerInterface
     }
 
     /**
-     * Checks if initializer supports provided context.
-     *
-     * @param ContextInterface $context
-     *
-     * @return Boolean
-     */
-    public function supports(ContextInterface $context)
-    {
-        return $context instanceof MachinistAwareInterface;
-    }
-
-    /**
      * Initializes provided context.
      *
-     * @param ContextInterface $context
+     * @param Context $context
      */
-    public function initialize(ContextInterface $context)
+    public function initializeContext(Context $context)
     {
+        if (!$context instanceof MachinistAwareInterface) {
+            return;
+        }
+
         if (!$this->machinistConfigured) {
             $this->configurator->configure($this->parameters);
             $this->machinistConfigured = true;

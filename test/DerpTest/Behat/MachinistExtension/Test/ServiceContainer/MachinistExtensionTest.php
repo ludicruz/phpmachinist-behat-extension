@@ -20,25 +20,31 @@
  * OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-namespace DerpTest\Behat\MachinistExtension\Context\ClassGuesser;
+namespace DerpTest\Behat\MachinistExtension\Test\ServiceContainer;
 
-use Behat\Behat\Context\ClassGuesser\ClassGuesserInterface;
+use Phake;
+use DerpTest\Behat\MachinistExtension\ServiceContainer\MachinistExtension;
 
-/**
- * @author Adam L. Englander <adam.l.englander@coupla.co>
- *
- * Context class guesser for the Machinist extension
- */
-class MachinistContextClassGuesser implements ClassGuesserInterface
+class RawMachinistContextTest extends \PHPUnit_Framework_TestCase
 {
-
     /**
-     * Tries to guess context classname.
-     *
-     * @return string
+     * @var MachinistExtension
      */
-    public function guess()
+    private $extension;
+
+    protected function setUp()
     {
-        return 'DerpTest\Behat\MachinistExtension\Context\MachinistContext';
+        $this->extension = new MachinistExtension();
+    }
+
+    protected function tearDown()
+    {
+        $this->extension = null;
+    }
+
+    public function testGetConfigKey()
+    {
+        $actual = $this->extension->getConfigKey();
+        $this->assertEquals('machinist', $actual);
     }
 }

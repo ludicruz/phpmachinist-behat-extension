@@ -22,7 +22,7 @@
  
 namespace DerpTest\Behat\MachinistExtension\Test;
 
-use DerpTest\Behat\MachinistExtension\Extension;
+use DerpTest\Behat\MachinistExtension\ServiceContainer\MachinistExtension;
 use Phake;
 
 class ExtensionTest extends \PHPUnit_Framework_TestCase {
@@ -40,7 +40,7 @@ class ExtensionTest extends \PHPUnit_Framework_TestCase {
     private $parameterBag;
 
     /**
-     * @var Extension
+     * @var MachinistExtension
      */
     private $extension;
 
@@ -51,7 +51,7 @@ class ExtensionTest extends \PHPUnit_Framework_TestCase {
             ->getParameterBag()
             ->thenReturn($this->parameterBag);
 
-        $this->extension = new Extension();
+        $this->extension = new MachinistExtension();
     }
 
     protected function tearDown()
@@ -59,48 +59,28 @@ class ExtensionTest extends \PHPUnit_Framework_TestCase {
         $this->extension = null;
     }
 
-    public function testGetCompilerPassReturnsEmptyArray()
-    {
-        $actual = $this->extension->getCompilerPasses();
-        $this->assertInternalType('array', $actual);
-        $this->assertEmpty($actual);
-    }
-
     public function testLoadSetsParameters()
     {
         $expected = array('my config' => 'value');
         $actual = null;
 
-        $this->extension->load($expected, $this->container);
+        $this->extension->load($this->container, $expected);
         Phake::verify($this->container)->setParameter('derptest.phpmachinist.behat.parameters', Phake::capture($actual));
         $this->assertEquals($expected, $actual, 'Unexpected configuration passed to container');
     }
 
     public function testLoadCreatesMachinistService()
     {
-        $this->extension->load(array(), $this->container);
+        $this->extension->load($this->container, array());
         Phake::verify($this->container)->setDefinition(
             'derptest.phpmachinist',
             $this->isInstanceOf('\Symfony\Component\DependencyInjection\Definition')
         );
     }
 
-    public function testLoadCreatesTaggedClassGuesserService()
-    {
-        $this->extension->load(array(), $this->container);
-
-        $definition = null;
-        Phake::verify($this->container)->setDefinition(
-            'derptest.phpmachinist.behat.context.class_guesser',
-            Phake::capture($definition)
-        );
-        $this->assertInstanceOf('\Symfony\Component\DependencyInjection\Definition', $definition);
-        $this->assertTrue($definition->hasTag('behat.context.class_guesser'));
-    }
-
     public function testLoadCreatesTaggedInitializerService()
     {
-        $this->extension->load(array(), $this->container);
+        $this->extension->load($this->container, array());
 
         $definition = null;
         Phake::verify($this->container)->setDefinition(
@@ -124,7 +104,7 @@ class ExtensionTest extends \PHPUnit_Framework_TestCase {
             )
         );
 
-        $this->extension->load($data, $this->container);
+        $this->extension->load($this->container, $data);
 
         $params = null;
         Phake::verify($this->container)
@@ -151,7 +131,7 @@ class ExtensionTest extends \PHPUnit_Framework_TestCase {
             )
         );
 
-        $this->extension->load($data, $this->container);
+        $this->extension->load($this->container, $data);
 
         $params = null;
         Phake::verify($this->container)
@@ -180,7 +160,7 @@ class ExtensionTest extends \PHPUnit_Framework_TestCase {
             )
         );
 
-        $this->extension->load($data, $this->container);
+        $this->extension->load($this->container, $data);
 
         $params = null;
         Phake::verify($this->container)
@@ -202,7 +182,7 @@ class ExtensionTest extends \PHPUnit_Framework_TestCase {
             )
         );
 
-        $this->extension->load($data, $this->container);
+        $this->extension->load($this->container, $data);
 
         $params = null;
         Phake::verify($this->container)
@@ -224,7 +204,7 @@ class ExtensionTest extends \PHPUnit_Framework_TestCase {
             )
         );
 
-        $this->extension->load($data, $this->container);
+        $this->extension->load($this->container, $data);
 
         $params = null;
         Phake::verify($this->container)

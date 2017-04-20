@@ -50,28 +50,6 @@ class RawMachinistContextTest extends \PHPUnit_Framework_TestCase
         $this->context = null;
     }
 
-    public function testGetMainContextParentNotSetReturnsSelf()
-    {
-        $actual = $this->context->getMainContext();
-
-        $this->assertEquals($this->context, $actual);
-    }
-
-    public function testGetMainContextParentIsSetAndHasMainReturnsParent()
-    {
-        $mainContext = Phake::mock('\Behat\Behat\Context\ExtendedContextInterface');
-        $parentContext = Phake::mock('\Behat\Behat\Context\ExtendedContextInterface');
-        Phake::when($parentContext)
-            ->getMainContext()
-            ->thenReturn($mainContext);
-        $this->context->setParentContext($parentContext);
-
-        $actual = $this->context->getMainContext();
-
-        Phake::verify($parentContext)->getMainContext();
-        $this->assertSame($mainContext, $actual);
-    }
-
     public function testGetSubcontextReturnsNull()
     {
         $actual = $this->context->getSubcontext('anything');

@@ -4,6 +4,7 @@
     "license": "MIT",
     "type": "library",
     "keywords": ["machinist", "php", "test", "object", "factory", "blueprint", "behat"],
+    "version": "dev-master-yo",
     "authors": [
         {
             "name": "Stephan Soileau",
@@ -30,13 +31,21 @@
             "dev-master": "3.0.x-dev"
         }
     },
+    "repositories": [
+        {
+            "type": "path",
+            "url": "../phpmachinist/"
+        }
+    ],
     "require": {
         "php": ">5.3.0",
-        "behat/behat": "~2.4",
-        "derptest/phpmachinist": "~3.0"
+        "behat/behat": "~3.0",
+        "derptest/phpmachinist": "dev-master-yo"
     },
     "require-dev": {
-        "phake/phake": "~2.0@alpha",
-        "phpunit/phpunit": "3.7.*"
+        "phake/phake": "~2.1",
+        "phpunit/phpunit": "3.7.*",
+        "symfony/expression-language": "^3.2",
+        "behat/symfony2-extension": "^2.1"
     }
 }
